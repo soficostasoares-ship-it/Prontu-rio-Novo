@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Avaliação Pré-Operatória Nutricional</title>
+<style>
+:root {
+  --verde: #0F6E56; --verde-med: #1D9E75; --verde-claro: #E1F5EE; --verde-esc: #085041;
+  --azul: #185FA5; --azul-claro: #E6F1FB;
+  --amber: #BA7517; --amber-claro: #FAEEDA;
+  --vermelho: #A32D2D; --vermelho-claro: #FCEBEB;
+  --cinza-bg: #F1EFE8; --cinza-borda: #D3D1C7; --cinza-med: #5F5E5A; --cinza-esc: #2C2C2A;
+  --branco: #fff; --sombra: 0 2px 14px rgba(0,0,0,0.07);
+  --r: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f5;color:var(--cinza-esc);font-size:15px;line-height:1.6}
+
+/* HEADER */
+.header{background:var(--verde-esc);color:#fff;padding:0 2.5rem;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.header-logo{display:flex;align-items:center;gap:12px}
+.header-logo svg{opacity:.85}
+.header h1{font-size:15px;font-weight:600;letter-spacing:.03em}
+.header-sub{font-size:12px;opacity:.65;margin-top:1px}
+.header-badge{background:var(--verde-med);color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px}
+
+/* PROGRESS STEPS */
+.steps-bar{background:#fff;border-bottom:1px solid var(--cinza-borda);padding:0 2.5rem;display:flex;align-items:center;gap:0;overflow-x:auto}
+.step-item{display:flex;align-items:center;gap:10px;padding:14px 20px;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;min-width:fit-content}
+.step-item:hover{background:var(--cinza-bg)}
+.step-item.active{border-bottom-color:var(--verde-med);color:var(--verde)}
+.step-item.done{color:var(--verde-med)}
+.step-item.locked{color:#b0b0a0;cursor:not-allowed}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid currentColor;flex-shrink:0}
+.step-item.done .step-num{background:var(--verde-med);border-color:var(--verde-med);color:#fff}
+.step-item.active .step-num{background:var(--verde);border-color:var(--verde);color:#fff}
+.step-label{font-size:13px;font-weight:500}
+.step-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:4px}
+.tag-1{background:#dbeafe;color:#1e40af}
+.tag-2{background:#dcfce7;color:#14532d}
+
+/* CONSULTA BADGE */
+.consulta-bar{background:linear-gradient(135deg,var(--verde-esc),var(--verde));color:#fff;padding:6px 2.5rem;font-size:12px;font-weight:500;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+
+/* MAIN */
+.main{max-width:1050px;margin:0 auto;padding:2rem 2rem 4rem}
+.page{display:none}.page.active{display:block}
+
+/* SECTION HEADER */
+.sec-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.6rem}
+.sec-icon{width:44px;height:44px;background:var(--verde-claro);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.sec-title{font-size:21px;font-weight:700;color:var(--verde-esc)}
+.sec-sub{font-size:13px;color:var(--cinza-med);margin-top:3px}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--cinza-borda);border-radius:var(--r);padding:1.4rem 1.6rem;margin-bottom:1.2rem;box-shadow:var(--sombra)}
+.card-title{font-size:13px;font-weight:700;color:var(--verde-esc);margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid var(--cinza-bg);display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.04em}
+.card-title::before{content:'';width:4px;height:16px;background:var(--verde-med);border-radius:3px;display:inline-block}
+
+/* FORM */
+label{font-size:12px;font-weight:600;color:var(--cinza-med);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:9px 12px;border:1px solid var(--cinza-borda);border-radius:7px;font-size:14px;color:var(--cinza-esc);background:#fff;transition:border .15s;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--verde-med);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.fg{margin-bottom:1rem}
+.topic-comment{margin-top:1rem;padding-top:.9rem;border-top:1px dashed var(--cinza-borda)}
+.topic-comment textarea{background:#fcfcfb}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
+@media(max-width:700px){.row2,.row3,.row4{grid-template-columns:1fr}}
+
+/* CHECKBOXES */
+.checks{display:flex;flex-direction:column;gap:7px}
+.chk{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid var(--cinza-borda);border-radius:7px;cursor:pointer;transition:background .15s;font-size:13px}
+.chk:hover{background:var(--cinza-bg)}
+.chk.sel{background:var(--verde-claro);border-color:var(--verde-med)}
+.chk input[type=checkbox]{width:16px;height:16px;accent-color:var(--verde);cursor:pointer;flex-shrink:0;margin-top:2px}
+.chk-label{flex:1;line-height:1.4}
+.chk-sub{font-size:11px;color:var(--cinza-med);display:block;margin-top:2px}
+
+/* RADIO PILLS */
+.radio-pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill-opt{padding:7px 16px;border:1px solid var(--cinza-borda);border-radius:20px;cursor:pointer;font-size:13px;transition:all .15s}
+.pill-opt:hover{border-color:var(--verde-med);color:var(--verde)}
+.pill-opt.sel{background:var(--verde);color:#fff;border-color:var(--verde)}
+
+/* CHIPS PROCEDIMENTOS */
+.proc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.proc-chip{padding:10px 14px;border:1.5px solid var(--cinza-borda);border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;text-align:center;background:#fff}
+.proc-chip:hover{border-color:var(--verde-med);color:var(--verde);background:var(--verde-claro)}
+.proc-chip.sel{border-color:var(--verde);background:var(--verde);color:#fff;font-weight:600}
+.proc-group-title{font-size:11px;font-weight:700;color:var(--cinza-med);text-transform:uppercase;letter-spacing:.05em;margin:1rem 0 .5rem;padding-bottom:.3rem;border-bottom:1px solid var(--cinza-bg)}
+
+/* EXAMES LIST */
+.exames-list{display:flex;flex-direction:column;gap:6px}
+.exame-item{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--verde-claro);border:1px solid #9FE1CB;border-radius:7px;font-size:13px}
+.exame-item .icon{width:24px;height:24px;background:var(--verde-med);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0}
+
+/* IMC DISPLAY */
+.imc-box{background:var(--amber-claro);border:1px solid #FAC775;border-radius:var(--r);padding:1rem 1.4rem;display:flex;align-items:center;gap:14px;margin-top:.5rem}
+.imc-val{font-size:32px;font-weight:700;color:var(--amber)}
+.imc-label{font-size:13px;color:var(--amber);font-weight:600}
+.imc-class{font-size:12px;color:var(--cinza-med);margin-top:2px}
+
+/* ABCD TABS */
+.abcd-tabs{display:flex;gap:0;border-bottom:2px solid var(--cinza-borda);margin-bottom:1.4rem}
+.abcd-tab{padding:10px 22px;cursor:pointer;font-size:14px;font-weight:600;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;color:var(--cinza-med)}
+.abcd-tab:hover{color:var(--verde)}
+.abcd-tab.active{color:var(--verde-esc);border-bottom-color:var(--verde)}
+.abcd-pane{display:none}.abcd-pane.active{display:block}
+
+/* RISK METER */
+.risk-bar{height:14px;background:linear-gradient(90deg,#3B6D11,#BA7517,#A32D2D);border-radius:10px;position:relative;margin:8px 0}
+.risk-needle{position:absolute;top:-4px;width:4px;height:22px;background:var(--cinza-esc);border-radius:2px;transform:translateX(-50%);transition:left .5s}
+.risk-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--cinza-med);margin-top:2px}
+
+/* STATUS BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-ok{background:#EAF3DE;color:#27500A}
+.badge-warn{background:var(--amber-claro);color:#633806}
+.badge-danger{background:var(--vermelho-claro);color:var(--vermelho)}
+.badge-info{background:var(--azul-claro);color:#042C53}
+
+/* DECISION ENGINE */
+.decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.dec-card{border-radius:var(--r);padding:1.2rem;border:1px solid}
+.dec-apto{background:#EAF3DE;border-color:#C0DD97}
+.dec-preparo{background:var(--amber-claro);border-color:#FAC775}
+.dec-napto{background:var(--vermelho-claro);border-color:#F7C1C1}
+.dec-title{font-size:13px;font-weight:700;margin-bottom:.4rem}
+.dec-items{font-size:12px;line-height:1.8;color:var(--cinza-med)}
+
+/* RELATORIO */
+.rel-header{background:var(--verde-esc);color:#fff;padding:1.4rem 1.6rem;border-radius:var(--r) var(--r) 0 0}
+.rel-body{background:#fff;border:1px solid var(--cinza-borda);border-top:none;border-radius:0 0 var(--r) var(--r);padding:1.6rem}
+.rel-section{margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--cinza-bg)}
+.rel-section:last-child{border-bottom:none;margin-bottom:0}
+.rel-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--verde);margin-bottom:.6rem}
+.rel-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.5;margin-bottom:.4rem;color:var(--cinza-esc)}
+.rel-item::before{content:'▸';color:var(--verde-med);flex-shrink:0;margin-top:1px}
+
+/* BUTTONS */
+.btn{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--verde);color:#fff}.btn-primary:hover{background:var(--verde-esc)}
+.btn-outline{background:#fff;color:var(--verde);border:1.5px solid var(--verde)}.btn-outline:hover{background:var(--verde-claro)}
+.btn-row{display:flex;justify-content:flex-end;gap:10px;margin-top:1.5rem}
+.btn-print{background:var(--azul);color:#fff}.btn-print:hover{background:#0C447C}
+
+/* ALERTA */
+.alerta{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:8px}
+.alerta-warn{background:var(--amber-claro);border-left:4px solid var(--amber);color:#633806}
+.alerta-info{background:var(--verde-claro);border-left:4px solid var(--verde-med);color:var(--verde-esc)}
+.alerta-danger{background:var(--vermelho-claro);border-left:4px solid var(--vermelho);color:var(--vermelho)}
+
+/* METRIC CARDS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:1.2rem}
+.metric{background:var(--cinza-bg);border-radius:var(--r);padding:.9rem 1rem}
+.metric-label{font-size:11px;font-weight:600;color:var(--cinza-med);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.metric-val{font-size:22px;font-weight:700;color:var(--verde-esc)}
+.metric-unit{font-size:12px;color:var(--cinza-med);font-weight:400}
+@media(max-width:700px){.metrics{grid-template-columns:1fr 1fr}}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--cinza-bg);padding:8px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza-med)}
+td{padding:9px 12px;border-bottom:1px solid var(--cinza-bg)}
+tr:last-child td{border-bottom:none}
+
+
+
+/* LOGIN */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--verde-esc),var(--verde));padding:2rem}
+.login-card{width:100%;max-width:420px;background:#fff;border-radius:16px;padding:2rem;box-shadow:0 18px 45px rgba(0,0,0,.22)}
+.login-title{font-size:22px;font-weight:800;color:var(--verde-esc);margin-bottom:.25rem}
+.login-sub{font-size:13px;color:var(--cinza-med);margin-bottom:1.4rem}
+.login-error{display:none;background:var(--vermelho-claro);color:var(--vermelho);border-left:4px solid var(--vermelho);padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:1rem}
+.app-shell{display:none}
+.app-shell.visible{display:block}
+
+/* MENU PACIENTES */
+.menu-btn{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;font-size:22px;line-height:1;cursor:pointer;margin-right:12px;display:flex;align-items:center;justify-content:center}
+.menu-btn:hover{background:rgba(255,255,255,.22)}
+.side-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:350;display:none}
+.side-overlay.open{display:block}
+.side-panel{position:fixed;left:0;top:0;width:330px;max-width:88vw;height:100vh;background:#fff;z-index:360;box-shadow:8px 0 30px rgba(0,0,0,.18);transform:translateX(-105%);transition:transform .22s;padding:1.2rem;display:flex;flex-direction:column}
+.side-panel.open{transform:translateX(0)}
+.side-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--cinza-bg);padding-bottom:.8rem;margin-bottom:1rem}
+.side-title{font-size:16px;font-weight:800;color:var(--verde-esc)}
+.side-close{border:none;background:var(--cinza-bg);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px}
+.patient-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.patient-item{border:1px solid var(--cinza-borda);border-radius:9px;padding:10px 12px;cursor:pointer;background:#fff}
+.patient-item:hover{border-color:var(--verde-med);background:var(--verde-claro)}
+.patient-name{font-size:14px;font-weight:700;color:var(--verde-esc)}
+.patient-meta{font-size:11px;color:var(--cinza-med);margin-top:2px}
+.empty-list{font-size:13px;color:var(--cinza-med);padding:1rem;background:var(--cinza-bg);border-radius:8px}
+.autosave-note{font-size:11px;color:rgba(255,255,255,.7);margin-left:8px}
+
+/* IMPRESSÃO EXAMES */
+.exames-print-doc{display:none}
+body.print-exames .header,body.print-exames .steps-bar,body.print-exames .main,body.print-exames .side-overlay,body.print-exames .side-panel{display:none!important}
+body.print-exames .exames-print-doc{display:block!important;background:#fff;color:#111;padding:28px;font-family:'Segoe UI',system-ui,sans-serif}
+.print-title{font-size:20px;font-weight:800;margin-bottom:4px;color:#085041}
+.print-sub{font-size:12px;color:#555;margin-bottom:18px}
+.print-box{border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:14px}
+.print-box-title{font-size:12px;font-weight:800;text-transform:uppercase;color:#085041;margin-bottom:8px}
+.print-list{margin-left:18px;line-height:1.8;font-size:14px}
+
+/* PRINT */
+@media print{
+  body.print-exames .exames-print-doc{display:block!important}
+  .steps-bar,.header,.btn-row,.nav-print{display:none!important}
+  body{background:#fff}
+  .page{display:block!important}
+  .card{box-shadow:none;border:1px solid #ddd}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-title">Acesso ao Sistema</div>
+    <div class="login-sub">Digite o login e a senha para iniciar o atendimento.</div>
+    <div class="login-error" id="login-error">Login ou senha incorretos.</div>
+    <div class="fg"><label>Login</label><input type="text" id="login_numero" placeholder="Número de acesso"></div>
+    <div class="fg"><label>Senha</label><input type="password" id="login_senha" placeholder="Senha"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:.4rem" onclick="validarLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-shell" id="app-shell">
+
+<!-- MENU PACIENTES -->
+<div class="side-overlay" id="side-overlay" onclick="togglePatientMenu(false)"></div>
+<aside class="side-panel" id="side-panel">
+  <div class="side-head">
+    <div>
+      <div class="side-title">Pacientes salvos</div>
+      <div class="patient-meta">Clique no nome para continuar o atendimento</div>
+    </div>
+    <button class="side-close" onclick="togglePatientMenu(false)">×</button>
+  </div>
+  <div class="patient-list" id="patient-list"></div>
+</aside>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <button class="menu-btn" onclick="togglePatientMenu(true)" title="Pacientes salvos">⋮</button>
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+      <rect width="30" height="30" rx="8" fill="rgba(255,255,255,.15)"/>
+      <path d="M15 7C10.6 7 7 10.6 7 15s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 3c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 11.2c-2.7 0-5-1.4-6.4-3.4.03-2.1 4.3-3.3 6.4-3.3s6.37 1.2 6.4 3.3c-1.4 2-3.7 3.4-6.4 3.4z" fill="white"/>
+    </svg>
+    <div>
+      <div class="header h1" style="font-size:15px;font-weight:700;color:#fff">Sistema de Avaliação Pré-Operatória</div>
+      <div class="header-sub">Nutrição Cirúrgica com Motor de Decisão Clínica</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px"><span class="autosave-note" id="autosave-note">Salvamento local ativo</span><div class="header-badge">⚡ ML Ativo</div></div>
+</header>
+
+<!-- STEPS NAV -->
+<div class="steps-bar">
+  <div class="step-item active" onclick="goTo(0)" id="step0">
+    <div class="step-num">1</div>
+    <div>
+      <div class="step-label">Cadastro</div>
+    </div>
+    <span class="step-tag tag-1">1ª Consulta</span>
+  </div>
+  <div class="step-item locked" onclick="goTo(1)" id="step1">
+    <div class="step-num">2</div>
+    <div class="step-label">Procedimento</div>
+    <span class="step-tag tag-1">1ª Consulta</span>
+  </div>
+  <div class="step-item locked" onclick="goTo(2)" id="step2">
+    <div class="step-num">3</div>
+    <div class="step-label">Triagem Inicial</div>
+    <span class="step-tag tag-1">1ª Consulta</span>
+  </div>
+  <div class="step-item locked" onclick="goTo(3)" id="step3">
+    <div class="step-num">4</div>
+    <div class="step-label">Solicitação de Exames</div>
+    <span class="step-tag tag-1">1ª Consulta</span>
+  </div>
+  <div class="step-item locked" onclick="goTo(4)" id="step4">
+    <div class="step-num">5</div>
+    <div class="step-label">Avaliação ABCD</div>
+    <span class="step-tag tag-2">2ª Consulta</span>
+  </div>
+  <div class="step-item locked" onclick="goTo(5)" id="step5">
+    <div class="step-num">6</div>
+    <div class="step-label">Motor de Decisão</div>
+    <span class="step-tag tag-2">2ª Consulta</span>
+  </div>
+  <div class="step-item locked" onclick="goTo(6)" id="step6">
+    <div class="step-num">7</div>
+    <div class="step-label">Relatório Final</div>
+    <span class="step-tag tag-2">2ª Consulta</span>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ===== PAGE 0: CADASTRO ===== -->
+<div class="page active" id="page0">
+  <div class="sec-header">
+    <div class="sec-icon">👤</div>
+    <div>
+      <div class="sec-title">Cadastro do Paciente</div>
+      <div class="sec-sub">Dados de identificação e medidas antropométricas iniciais</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Identificação</div>
+    <div class="row2">
+      <div class="fg"><label>Nome completo</label><input type="text" id="nome" placeholder="Nome do paciente"></div>
+      <div class="fg"><label>Data de nascimento</label><input type="date" id="dnasc"></div>
+    </div>
+    <div class="row3">
+      <div class="fg"><label>Sexo</label>
+        <select id="sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option><option>Outro</option></select>
+      </div>
+      <div class="fg"><label>Profissão</label><input type="text" id="profissao" placeholder="Opcional"></div>
+      <div class="fg"><label>Data da consulta</label><input type="date" id="dconsulta" value=""></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Medidas Antropométricas</div>
+    <div class="row4">
+      <div class="fg"><label>Peso (kg)</label><input type="number" id="peso" placeholder="Ex: 75.5" oninput="calcIMC()"></div>
+      <div class="fg"><label>Altura (cm)</label><input type="number" id="altura" placeholder="Ex: 165" oninput="calcIMC()"></div>
+      <div class="fg"><label>% Gordura</label><input type="number" id="gordura" placeholder="Ex: 28"></div>
+      <div class="fg"><label>Circunf. Abdominal (cm)</label><input type="number" id="cabd" placeholder="Ex: 90"></div>
+    </div>
+    <div id="imc-display" style="display:none">
+      <div class="imc-box">
+        <div>
+          <div class="imc-val" id="imc-val">--</div>
+          <div class="imc-unit" style="font-size:11px;color:var(--amber);margin-top:-4px">kg/m²</div>
+        </div>
+        <div>
+          <div class="imc-label" id="imc-label">--</div>
+          <div class="imc-class" id="imc-class"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="goTo(1)">Próximo: Procedimento →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 1: PROCEDIMENTOS ===== -->
+<div class="page" id="page1">
+  <div class="sec-header">
+    <div class="sec-icon">🏥</div>
+    <div>
+      <div class="sec-title">Seleção do Procedimento Cirúrgico</div>
+      <div class="sec-sub">O procedimento selecionado define automaticamente os exames solicitados</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Procedimentos Faciais</div>
+    <div class="proc-grid" id="procs-faciais">
+      <div class="proc-chip" onclick="selProc(this,'Blefaroplastia')">Blefaroplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Rinoplastia')">Rinoplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Ritidoplastia')">Ritidoplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Otoplastia')">Otoplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Lipoaspiração de Papada')">Lipoaspiração de Papada</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Procedimentos Corporais</div>
+    <div class="proc-grid" id="procs-corporais">
+      <div class="proc-chip" onclick="selProc(this,'Mamoplastia')">Mamoplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Implante Mamário')">Implante Mamário</div>
+      <div class="proc-chip" onclick="selProc(this,'Braquioplastia')">Braquioplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Abdominoplastia')">Abdominoplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Miniabdominoplastia')">Miniabdominoplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Lipoescultura')">Lipoescultura</div>
+      <div class="proc-chip" onclick="selProc(this,'Cruroplastia')">Cruroplastia</div>
+      <div class="proc-chip" onclick="selProc(this,'Implante de Silicone Glúteos')">Implante Silicone Glúteos</div>
+    </div>
+  </div>
+
+  <div id="proc-sel-display" style="display:none" class="alerta alerta-info">
+    <span>✅</span>
+    <span>Procedimento selecionado: <strong id="proc-sel-nome"></strong> — os exames serão gerados automaticamente.</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goTo(0)">← Voltar</button>
+    <button class="btn btn-primary" onclick="goTo(2)">Próximo: Triagem →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 2: TRIAGEM INICIAL ===== -->
+<div class="page" id="page2">
+  <div class="sec-header">
+    <div class="sec-icon">🔍</div>
+    <div>
+      <div class="sec-title">Triagem Inicial</div>
+      <div class="sec-sub">Avaliação clínica padronizada — 1ª Consulta</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Comorbidades</div>
+    <div class="checks" id="chk-comorbidades">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="doenca_cronica"> <span class="chk-label">Possui alguma doença crônica diagnosticada (diabetes, hipertensão, doenças cardíacas)?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="diabetes"> <span class="chk-label">Tem diabetes ou resistência à insulina?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="autoimune"> <span class="chk-label">Possui doença autoimune ou inflamatória?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="cicatrizacao_doenca"> <span class="chk-label">Possui alguma doença que afete a cicatrização?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Comorbidades</label><textarea id="comentarios_comorbidades" rows="2" placeholder="Observações médicas sobre comorbidades, riscos ou condutas..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tabagismo e Etilismo</div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="fumante"> <span class="chk-label">É fumante atualmente?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="ex_fumante"> <span class="chk-label">Parou de fumar recentemente (últimos 30 dias)?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="alcool"> <span class="chk-label">Consome álcool com frequência?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Tabagismo e etilismo</label><textarea id="comentarios_tabagismo" rows="2" placeholder="Observações sobre tabagismo, álcool, orientações de suspensão..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Medicamentos</div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="uso_medicamentos"> <span class="chk-label">Faz uso contínuo de medicamentos?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="anticoagulante"> <span class="chk-label">Usa medicamentos que aumentam o risco de sangramento (anticoagulantes, antiagregantes)?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="corticoide"> <span class="chk-label">Usa corticoides de forma crônica?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="anticoncepcional"> <span class="chk-label">Usa anticoncepcional hormonal?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Medicamentos</label><textarea id="comentarios_medicamentos" rows="2" placeholder="Detalhe medicamentos em uso, doses, necessidade de suspensão..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Medicamentos para Emagrecimento (GLP-1)</div>
+    <div class="alerta alerta-warn" style="margin-bottom:1rem"><span>⚠️</span> <span>Agonistas GLP-1 podem aumentar risco de broncoaspiração. Avaliar suspensão pré-operatória.</span></div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this);toggleGlp1(this)"><input type="checkbox" value="glp1"> <span class="chk-label">Usa medicamentos para emagrecimento (Mounjaro, Ozempic, Wegovy ou similares)?</span></label>
+    </div>
+    <div id="glp1-extra" style="display:none;margin-top:1rem">
+      <div class="row3">
+        <div class="fg"><label>Há quanto tempo usa GLP-1?</label>
+          <select id="glp1_tempo"><option value="">Selecione</option><option>Menos de 1 mês</option><option>1–3 meses</option><option>3–6 meses</option><option>Mais de 6 meses</option></select>
+        </div>
+        <div class="fg"><label>Iniciou ou aumentou dose recentemente?</label>
+          <select id="glp1_dose"><option value="">Selecione</option><option>Sim, última semana</option><option>Sim, último mês</option><option>Não</option></select>
+        </div>
+        <div class="fg"><label>Náuseas, vômitos ou constipação frequente?</label>
+          <select id="glp1_sintomas"><option value="">Selecione</option><option>Sim, frequente</option><option>Sim, ocasional</option><option>Não</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — GLP-1 / emagrecimento</label><textarea id="comentarios_glp1" rows="2" placeholder="Observações sobre GLP-1, sintomas gastrointestinais ou orientação anestésica..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Histórico Cirúrgico</div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="cirurgia_prev"> <span class="chk-label">Já realizou cirurgias anteriormente?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="complic_cirurg"> <span class="chk-label">Já teve complicações cirúrgicas?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="prob_anestesia"> <span class="chk-label">Já teve problemas com anestesia?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Histórico cirúrgico</label><textarea id="comentarios_historico_cirurgico" rows="2" placeholder="Detalhe cirurgias prévias, intercorrências ou anestesia..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Cicatrização</div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="queloide"> <span class="chk-label">Possui histórico de queloide ou cicatriz hipertrófica?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="prob_cicatriz"> <span class="chk-label">Já teve problemas de cicatrização (deiscência, infecção)?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Cicatrização</label><textarea id="comentarios_cicatrizacao" rows="2" placeholder="Observações sobre queloide, deiscência, infecção ou cicatriz hipertrófica..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Risco Tromboembólico</div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="trombose"> <span class="chk-label">Já teve trombose (TVP/TEP)?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="hist_familiar_trombose"> <span class="chk-label">Possui histórico familiar de trombose?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="imobilidade"> <span class="chk-label">Permanece longos períodos imobilizado(a)?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="anticon_trombose"> <span class="chk-label">Usa anticoncepcional hormonal (risco trombótico)?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Risco tromboembólico</label><textarea id="comentarios_tromboembolico" rows="2" placeholder="Observações sobre trombose prévia, familiar, anticoncepcional ou imobilidade..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Suplementos</div>
+    <div class="checks">
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="suplementos"> <span class="chk-label">Faz uso de suplementos?</span></label>
+      <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="supl_sangramento"> <span class="chk-label">Usa suplementos que podem aumentar sangramento (ômega-3 em alta dose, vitamina E, ginkgo)?</span></label>
+    </div>
+    <div class="topic-comment"><label>Comentários adicionais — Suplementos</label><textarea id="comentarios_suplementos" rows="2" placeholder="Detalhe suplementos em uso, dose, risco de sangramento ou orientações..."></textarea></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goTo(1)">← Voltar</button>
+    <button class="btn btn-primary" onclick="gerarExames();goTo(3)">Próximo: Gerar Exames →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 3: SOLICITAÇÃO DE EXAMES ===== -->
+<div class="page" id="page3">
+  <div class="sec-header">
+    <div class="sec-icon">🧪</div>
+    <div>
+      <div class="sec-title">Solicitação de Exames</div>
+      <div class="sec-sub">Exames gerados automaticamente conforme procedimento e triagem</div>
+    </div>
+  </div>
+
+  <div class="alerta alerta-info">
+    <span>ℹ️</span>
+    <span>Os exames abaixo foram gerados com base no procedimento <strong id="proc-exames-nome">selecionado</strong> e nos fatores de risco identificados na triagem.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Exames Solicitados</div>
+    <div class="exames-list" id="exames-list">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <div class="card" id="card-exames-extras" style="display:none">
+    <div class="card-title">Exames Adicionais por Fatores de Risco</div>
+    <div class="exames-list" id="exames-extras-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Retorno para 2ª Consulta</div>
+    <div class="row2">
+      <div class="fg"><label>Data prevista para retorno</label><input type="date" id="data_retorno"></div>
+      <div class="fg"><label>Observações</label><input type="text" id="obs_retorno" placeholder="Instruções ao paciente"></div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goTo(2)">← Voltar</button>
+    <button class="btn btn-print" onclick="imprimirExames()">🖨️ Gerar PDF / Imprimir Exames</button>
+    <button class="btn btn-primary" onclick="salvarEEncerrarPrimeiraConsulta()">Salvar e encerrar 1ª consulta</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 4: AVALIAÇÃO ABCD ===== -->
+<div class="page" id="page4">
+  <div class="sec-header">
+    <div class="sec-icon">📋</div>
+    <div>
+      <div class="sec-title">Avaliação Nutricional ABCD</div>
+      <div class="sec-sub">2ª Consulta — com resultados de exames disponíveis</div>
+    </div>
+  </div>
+
+  <!-- ABCD TABS -->
+  <div class="abcd-tabs">
+    <div class="abcd-tab active" onclick="abcdTab('A')">A — Antropométrica</div>
+    <div class="abcd-tab" onclick="abcdTab('B')">B — Bioquímica</div>
+    <div class="abcd-tab" onclick="abcdTab('C')">C — Clínica</div>
+    <div class="abcd-tab" onclick="abcdTab('D')">D — Dietética</div>
+  </div>
+
+  <!-- A: Antropométrica -->
+  <div class="abcd-pane active" id="abcd-A">
+    <div class="card">
+      <div class="card-title">A — Avaliação Antropométrica</div>
+      <div class="metrics" id="metrics-antrop">
+        <div class="metric"><div class="metric-label">Peso</div><div class="metric-val" id="m-peso">--<span class="metric-unit"> kg</span></div></div>
+        <div class="metric"><div class="metric-label">Altura</div><div class="metric-val" id="m-altura">--<span class="metric-unit"> cm</span></div></div>
+        <div class="metric"><div class="metric-label">IMC</div><div class="metric-val" id="m-imc">--<span class="metric-unit"> kg/m²</span></div></div>
+        <div class="metric"><div class="metric-label">% Gordura</div><div class="metric-val" id="m-gord">--<span class="metric-unit"> %</span></div></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label>Peso usual (kg)</label><input type="number" id="peso_usual" placeholder="Peso habitual"></div>
+        <div class="fg"><label>Perda de peso (kg)</label><input type="number" id="perda_peso" placeholder="Em quanto tempo?"></div>
+        <div class="fg"><label>Período da perda (meses)</label><input type="number" id="periodo_perda" placeholder="Ex: 3"></div>
+      </div>
+      <div id="antrop-alerta" style="margin-top:.5rem"></div>
+    </div>
+  </div>
+
+  <!-- B: Bioquímica -->
+  <div class="abcd-pane" id="abcd-B">
+    <div class="card">
+      <div class="card-title">B — Avaliação Bioquímica</div>
+      <div class="row3">
+        <div class="fg"><label>Hemoglobina (g/dL)</label><input type="number" id="lab_hb" placeholder="Ref: F>12 / M>13" oninput="avalLab()"></div>
+        <div class="fg"><label>Hematócrito (%)</label><input type="number" id="lab_htc" placeholder="Ref: F>36 / M>39"></div>
+        <div class="fg"><label>Glicemia em Jejum (mg/dL)</label><input type="number" id="lab_gli" placeholder="Ref: 70–99" oninput="avalLab()"></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label>Albumina (g/dL)</label><input type="number" id="lab_alb" placeholder="Ref: 3.5–5.0" oninput="avalLab()"></div>
+        <div class="fg"><label>Proteína Total (g/dL)</label><input type="number" id="lab_prot" placeholder="Ref: 6.0–8.0"></div>
+        <div class="fg"><label>Pré-albumina (mg/dL)</label><input type="number" id="lab_prealb" placeholder="Ref: 18–28"></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label>Ureia (mg/dL)</label><input type="number" id="lab_ureia" placeholder="Ref: 15–45"></div>
+        <div class="fg"><label>Creatinina (mg/dL)</label><input type="number" id="lab_creat" placeholder="Ref: 0.6–1.2"></div>
+        <div class="fg"><label>TP/INR</label><input type="number" id="lab_inr" placeholder="Ref: 0.8–1.2" oninput="avalLab()"></div>
+      </div>
+      <div id="bio-alertas" style="margin-top:.5rem"></div>
+    </div>
+  </div>
+
+  <!-- C: Clínica -->
+  <div class="abcd-pane" id="abcd-C">
+    <div class="card">
+      <div class="card-title">C — Avaliação Clínica</div>
+      <p style="font-size:13px;color:var(--cinza-med);margin-bottom:1rem">Confirme ou atualize os dados da triagem com os achados da 2ª consulta:</p>
+      <div class="row2">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--cinza-med);text-transform:uppercase;margin-bottom:.5rem">Comorbidades Ativas</div>
+          <div class="checks">
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="dm2"> <span class="chk-label">Diabetes Mellitus tipo 2</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="has"> <span class="chk-label">Hipertensão Arterial</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="dislip"> <span class="chk-label">Dislipidemia</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="hipotireoidismo"> <span class="chk-label">Hipotireoidismo</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="esteatose"> <span class="chk-label">Esteatose hepática</span></label>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--cinza-med);text-transform:uppercase;margin-bottom:.5rem">Sinais Clínicos Nutricionais</div>
+          <div class="checks">
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="edema"> <span class="chk-label">Edema periférico</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="sarcopenia"> <span class="chk-label">Perda muscular / sarcopenia</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="anemia_clinica"> <span class="chk-label">Sinais de anemia (palidez, astenia)</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="cicatriz_ruim"> <span class="chk-label">Histórico de cicatrização ruim</span></label>
+            <label class="chk" onclick="toggleChk(this)"><input type="checkbox" value="imuno_comprometido"> <span class="chk-label">Imunidade comprometida</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Risco Tromboembólico — Escore</div>
+      <div class="row4">
+        <div class="fg"><label>IMC > 30 kg/m²</label>
+          <select id="rt_imc"><option value="0">Não</option><option value="1">Sim (+1)</option></select></div>
+        <div class="fg"><label>Trombose prévia (TVP/TEP)</label>
+          <select id="rt_prev"><option value="0">Não</option><option value="3">Sim (+3)</option></select></div>
+        <div class="fg"><label>Anticoncepcional hormonal</label>
+          <select id="rt_anticon"><option value="0">Não</option><option value="1">Sim (+1)</option></select></div>
+        <div class="fg"><label>Cirurgia > 45 min</label>
+          <select id="rt_cirurgia"><option value="0">Não</option><option value="1">Sim (+1)</option></select></div>
+      </div>
+      <div id="trombose-escore" style="margin-top:.5rem"></div>
+    </div>
+  </div>
+
+  <!-- D: Dietética -->
+  <div class="abcd-pane" id="abcd-D">
+    <div class="card">
+      <div class="card-title">D — Avaliação Dietética</div>
+      <div class="row3">
+        <div class="fg"><label>Ingestão proteica estimada (g/kg/dia)</label><input type="number" id="prot_ingestao" placeholder="Ref ideal: 1.2–2.0" step="0.1" oninput="avalDieta()"></div>
+        <div class="fg"><label>Ingestão calórica estimada (kcal/dia)</label><input type="number" id="kcal_ingestao" placeholder="Ex: 1800"></div>
+        <div class="fg"><label>Ingestão hídrica (mL/dia)</label><input type="number" id="hidra_ingestao" placeholder="Ex: 2000"></div>
+      </div>
+      <div class="fg"><label>Suplementos em uso</label>
+        <input type="text" id="supl_uso" placeholder="Ex: Whey protein, vitamina D, ferro..."></div>
+      <div class="fg"><label>Recordatório alimentar (resumo)</label>
+        <textarea id="recordatorio" rows="3" placeholder="Café da manhã, almoço, jantar, lanches..."></textarea></div>
+      <div id="dieta-alerta" style="margin-top:.5rem"></div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goTo(3)">← Voltar</button>
+    <button class="btn btn-primary" onclick="calcDecisao();goTo(5)">Gerar Motor de Decisão →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 5: MOTOR DE DECISÃO ===== -->
+<div class="page" id="page5">
+  <div class="sec-header">
+    <div class="sec-icon">⚡</div>
+    <div>
+      <div class="sec-title">Motor de Decisão Clínica</div>
+      <div class="sec-sub">Análise automatizada dos dados ABCD com classificação de risco</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Classificação por Domínio ABCD</div>
+    <div id="abcd-classificacao">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Nível de Risco Global</div>
+    <div id="risco-global-display"><!-- JS --></div>
+    <div class="risk-bar" style="margin-top:1rem">
+      <div class="risk-needle" id="risk-needle" style="left:20%"></div>
+    </div>
+    <div class="risk-labels"><span>Baixo</span><span>Moderado</span><span>Alto</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Decisão: Aptidão Cirúrgica</div>
+    <div id="decisao-aptidao"><!-- JS --></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Suplementação Recomendada</div>
+    <div id="supl-recomendada"><!-- JS --></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ajuste Nutrológico e Preparo Pré-Operatório</div>
+    <div id="ajuste-nutro"><!-- JS --></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tempo Estimado para Cirurgia</div>
+    <div id="tempo-cirurgia"><!-- JS --></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goTo(4)">← Voltar</button>
+    <button class="btn btn-primary" onclick="gerarRelatorio();goTo(6)">Gerar Relatório Final →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 6: RELATÓRIO FINAL ===== -->
+<div class="page" id="page6">
+  <div class="sec-header">
+    <div class="sec-icon">📄</div>
+    <div>
+      <div class="sec-title">Relatório Final</div>
+      <div class="sec-sub">Protocolo estruturado para conduta médica</div>
+    </div>
+  </div>
+
+  <div id="relatorio-container"><!-- JS --></div>
+
+  <div class="btn-row" style="margin-top:1.5rem">
+    <button class="btn btn-outline" onclick="goTo(5)">← Voltar</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="btn btn-primary" onclick="novoAtendimento()">+ Novo Atendimento</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<div class="exames-print-doc" id="exames-print-doc"></div>
+
+</div><!-- /app-shell -->
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  currentPage: 0,
+  unlockedPages: [0],
+  proc: '',
+  procTipo: '',
+  exames: [],
+  examesExtras: [],
+  triagem: {},
+  imc: 0,
+  decisao: {},
+  patientId: null
+};
+
+const STORAGE_KEY = 'prontuario_preoperatorio_pacientes_v2';
+
+function validarLogin() {
+  const login = document.getElementById('login_numero').value.trim();
+  const senha = document.getElementById('login_senha').value.trim();
+  if (login === '9231' && senha === '1234') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-shell').classList.add('visible');
+    renderPatientList();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && document.getElementById('login-screen') && document.getElementById('login-screen').style.display !== 'none') validarLogin();
+});
+
+function getPatients() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function setPatients(pacientes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(pacientes));
+}
+
+function getFormSnapshot() {
+  const fields = {};
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (!el.id || el.id.startsWith('login_')) return;
+    if (el.type === 'checkbox') fields[el.id || el.value] = el.checked;
+    else fields[el.id] = el.value;
+  });
+  const checks = Array.from(document.querySelectorAll('.chk input[type=checkbox]:checked')).map(c => c.value);
+  return { fields, checks, state: {...state}, savedAt: new Date().toISOString() };
+}
+
+function saveCurrentPatient() {
+  const nome = (document.getElementById('nome')?.value || '').trim();
+  if (!nome) return;
+  if (!state.patientId) state.patientId = 'pac_' + Date.now();
+  const pacientes = getPatients();
+  const snapshot = getFormSnapshot();
+  const resumo = {
+    id: state.patientId,
+    nome,
+    procedimento: state.proc || '',
+    retorno: document.getElementById('data_retorno')?.value || '',
+    savedAt: snapshot.savedAt,
+    snapshot
+  };
+  const idx = pacientes.findIndex(p => p.id === state.patientId || p.nome.toLowerCase() === nome.toLowerCase());
+  if (idx >= 0) pacientes[idx] = {...pacientes[idx], ...resumo, id: pacientes[idx].id};
+  else pacientes.unshift(resumo);
+  setPatients(pacientes);
+  renderPatientList();
+  const note = document.getElementById('autosave-note');
+  if (note) note.textContent = 'Salvo automaticamente';
+}
+
+function setupAutosave() {
+  document.addEventListener('input', function(e){
+    if (e.target && e.target.matches('input, select, textarea') && !e.target.id.startsWith('login_')) {
+      clearTimeout(window.__saveTimer);
+      window.__saveTimer = setTimeout(saveCurrentPatient, 450);
+    }
+  });
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.matches('input, select, textarea') && !e.target.id.startsWith('login_')) {
+      setTimeout(saveCurrentPatient, 80);
+    }
+  });
+}
+
+function togglePatientMenu(open) {
+  document.getElementById('side-overlay').classList.toggle('open', open);
+  document.getElementById('side-panel').classList.toggle('open', open);
+  if (open) renderPatientList();
+}
+
+function renderPatientList() {
+  const list = document.getElementById('patient-list');
+  if (!list) return;
+  const pacientes = getPatients().sort((a,b)=> new Date(b.savedAt)-new Date(a.savedAt));
+  if (!pacientes.length) {
+    list.innerHTML = '<div class="empty-list">Nenhuma paciente salva ainda. Ao preencher o nome, o atendimento será salvo automaticamente neste navegador.</div>';
+    return;
+  }
+  list.innerHTML = pacientes.map(p => {
+    const data = p.savedAt ? new Date(p.savedAt).toLocaleString('pt-BR') : '';
+    const proc = p.procedimento ? ' • ' + p.procedimento : '';
+    const ret = p.retorno ? ' • Retorno: ' + p.retorno.split('-').reverse().join('/') : '';
+    return `<div class="patient-item" onclick="loadPatient('${p.id}')"><div class="patient-name">${escapeHtml(p.nome)}</div><div class="patient-meta">Salvo em ${data}${escapeHtml(proc)}${escapeHtml(ret)}</div></div>`;
+  }).join('');
+}
+
+function loadPatient(id) {
+  const paciente = getPatients().find(p => p.id === id);
+  if (!paciente || !paciente.snapshot) return;
+  const snap = paciente.snapshot;
+  state = {...state, ...(snap.state || {}), patientId: paciente.id};
+  Object.entries(snap.fields || {}).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!val;
+    else el.value = val;
+  });
+  document.querySelectorAll('.chk').forEach(label => label.classList.toggle('sel', label.querySelector('input')?.checked));
+  document.querySelectorAll('.proc-chip').forEach(c => c.classList.toggle('sel', c.textContent.trim() === state.proc || c.textContent.trim() === (state.proc||'').replace('Lipoaspiração de Papada','Lipoaspiração de Papada')));
+  if (state.proc) {
+    document.getElementById('proc-sel-display').style.display='flex';
+    document.getElementById('proc-sel-nome').textContent = state.proc;
+    document.getElementById('proc-exames-nome').textContent = state.proc;
+  }
+  calcIMC();
+  if (state.exames && state.exames.length) renderExames();
+  togglePatientMenu(false);
+  state.unlockedPages = Array.from(new Set([0,1,2,3,4,5,6,...(state.unlockedPages||[])]));
+  goTo(Math.min(state.currentPage || 4, 6));
+  alert('Atendimento de ' + paciente.nome + ' carregado. Você pode continuar a partir da 2ª consulta.');
+}
+
+function escapeHtml(txt) {
+  return String(txt || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goTo(n) {
+  if (!state.unlockedPages.includes(n) && n > state.currentPage + 1) return;
+  if (!state.unlockedPages.includes(n)) state.unlockedPages.push(n);
+
+  document.querySelectorAll('.page').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.step-item').forEach((s,i) => {
+    s.classList.remove('active','done','locked');
+    if (i === n) s.classList.add('active');
+    else if (state.unlockedPages.includes(i) && i < n) s.classList.add('done');
+    else if (state.unlockedPages.includes(i)) s.classList.add('done');
+    else s.classList.add('locked');
+  });
+  state.currentPage = n;
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  if (n===4) populateAbcdMetrics();
+}
+
+// ============================================================
+// IMC CALCULATOR
+// ============================================================
+function calcIMC() {
+  const p = parseFloat(document.getElementById('peso').value);
+  const a = parseFloat(document.getElementById('altura').value)/100;
+  if (!p || !a) return;
+  const imc = p/(a*a);
+  state.imc = imc;
+  const box = document.getElementById('imc-display');
+  box.style.display='flex';
+  document.getElementById('imc-val').textContent = imc.toFixed(1);
+  let label='', cls='';
+  if(imc<18.5){label='Baixo Peso';cls='⚠️ Risco nutricional elevado'}
+  else if(imc<25){label='Eutrófico';cls='✅ Peso adequado'}
+  else if(imc<30){label='Sobrepeso';cls='⚠️ Atenção nutricional'}
+  else if(imc<35){label='Obesidade I';cls='⚠️ Alto risco cirúrgico'}
+  else if(imc<40){label='Obesidade II';cls='🔴 Risco muito elevado'}
+  else{label='Obesidade III';cls='🔴 Risco crítico'}
+  document.getElementById('imc-label').textContent=label;
+  document.getElementById('imc-class').textContent=cls;
+}
+
+// ============================================================
+// PROCEDIMENTOS
+// ============================================================
+function selProc(el, nome) {
+  document.querySelectorAll('.proc-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  state.proc = nome;
+  state.procTipo = el.closest('#procs-faciais') ? 'facial' : 'corporal';
+  document.getElementById('proc-sel-display').style.display='flex';
+  document.getElementById('proc-sel-nome').textContent = nome;
+  document.getElementById('proc-exames-nome').textContent = nome;
+}
+
+// ============================================================
+// CHECKBOXES
+// ============================================================
+function toggleChk(el) {
+  el.classList.toggle('sel', el.querySelector('input').checked);
+}
+function toggleGlp1(el) {
+  const checked = el.querySelector('input').checked;
+  document.getElementById('glp1-extra').style.display = checked ? 'block' : 'none';
+}
+
+// ============================================================
+// GERAR EXAMES
+// ============================================================
+function gerarExames() {
+  const base_facial = ['Hemograma','Glicemia em Jejum','Raio X de Tórax','Coagulograma Completo','Proteinograma Completo','Ureia e Creatinina Séricas','Parecer Cardiológico + ECG'];
+  const base_corporal = ['Hemograma','Glicemia em Jejum','Raio X de Tórax','Coagulograma Completo','Proteinograma Completo','Ureia e Creatinina Séricas','Parecer Cardiológico + ECG','Ecografia de Mama Bilateral','Ecografia de Abdômen Total'];
+
+  state.exames = state.procTipo === 'facial' ? [...base_facial] : [...base_corporal];
+
+  // Extras por fatores de risco
+  state.examesExtras = [];
+  const chks = document.querySelectorAll('.chk input[type=checkbox]:checked');
+  const vals = Array.from(chks).map(c=>c.value);
+
+  if (vals.includes('diabetes') || vals.includes('doenca_cronica')) {
+    state.examesExtras.push('HbA1c (hemoglobina glicada)');
+    state.examesExtras.push('Insulina em Jejum');
+  }
+  if (vals.includes('trombose') || vals.includes('anticoncepcional') || vals.includes('hist_familiar_trombose')) {
+    state.examesExtras.push('Pesquisa de Trombofilias (proteína C, S, antitrombina)');
+    state.examesExtras.push('D-Dímero');
+  }
+  if (vals.includes('autoimune')) {
+    state.examesExtras.push('FAN e perfil autoimune');
+    state.examesExtras.push('PCR e VHS');
+  }
+  if (vals.includes('glp1')) {
+    state.examesExtras.push('Esvaziamento Gástrico (considerar avaliação anestésica)');
+  }
+  if (vals.includes('fumante') || vals.includes('ex_fumante')) {
+    state.examesExtras.push('Espirometria');
+    state.examesExtras.push('CO expirado (carboxihemoglobina)');
+  }
+  if (vals.includes('anticoagulante')) {
+    state.examesExtras.push('Anti-Xa ou TTPa conforme medicamento');
+  }
+
+  renderExames();
+}
+
+function renderExames() {
+  const list = document.getElementById('exames-list');
+  list.innerHTML = state.exames.map((e,i)=>`
+    <div class="exame-item">
+      <div class="icon">${i+1}</div>
+      <span>${e}</span>
+    </div>`).join('');
+
+  if (state.examesExtras.length > 0) {
+    document.getElementById('card-exames-extras').style.display='block';
+    document.getElementById('exames-extras-list').innerHTML = state.examesExtras.map((e,i)=>`
+      <div class="exame-item" style="background:var(--amber-claro);border-color:#FAC775">
+        <div class="icon" style="background:var(--amber)">+${i+1}</div>
+        <span>${e} <em style="font-size:11px;color:var(--amber)">(por fator de risco)</em></span>
+      </div>`).join('');
+  }
+}
+
+// ============================================================
+// ABCD TABS
+// ============================================================
+function abcdTab(letter) {
+  document.querySelectorAll('.abcd-tab').forEach((t,i)=>{
+    const letters = ['A','B','C','D'];
+    t.classList.toggle('active', letters[i]===letter);
+  });
+  document.querySelectorAll('.abcd-pane').forEach(p=>{
+    p.classList.toggle('active', p.id==='abcd-'+letter);
+  });
+}
+
+function populateAbcdMetrics() {
+  const peso = document.getElementById('peso').value;
+  const altura = document.getElementById('altura').value;
+  const gord = document.getElementById('gordura').value;
+  document.getElementById('m-peso').innerHTML = (peso||'--')+'<span class="metric-unit"> kg</span>';
+  document.getElementById('m-altura').innerHTML = (altura||'--')+'<span class="metric-unit"> cm</span>';
+  document.getElementById('m-imc').innerHTML = (state.imc?state.imc.toFixed(1):'--')+'<span class="metric-unit"> kg/m²</span>';
+  document.getElementById('m-gord').innerHTML = (gord||'--')+'<span class="metric-unit"> %</span>';
+}
+
+function avalLab() {
+  const hb = parseFloat(document.getElementById('lab_hb').value);
+  const gli = parseFloat(document.getElementById('lab_gli').value);
+  const alb = parseFloat(document.getElementById('lab_alb').value);
+  const inr = parseFloat(document.getElementById('lab_inr').value);
+  const sexo = document.getElementById('sexo').value;
+  let alertas = [];
+  if (hb && ((sexo==='Feminino'&&hb<12)||(sexo!=='Feminino'&&hb<13))) alertas.push({tipo:'danger',msg:'Hemoglobina abaixo do referencial — investigar anemia antes da cirurgia'});
+  if (gli && gli>100) alertas.push({tipo:'warn',msg:`Glicemia ${gli>126?'acima de 126 mg/dL — diabetes provável':'entre 100–125 mg/dL — pré-diabetes, otimizar controle'}`});
+  if (alb && alb<3.5) alertas.push({tipo:'danger',msg:'Albumina < 3.5 g/dL — desnutrição proteica confirmada, preparo obrigatório'});
+  if (inr && inr>1.5) alertas.push({tipo:'warn',msg:'INR elevado — avaliar coagulopatia e risco de sangramento intraoperatório'});
+  document.getElementById('bio-alertas').innerHTML = alertas.map(a=>`
+    <div class="alerta alerta-${a.tipo}" style="margin-bottom:.5rem">
+      <span>${a.tipo==='danger'?'🔴':'⚠️'}</span><span>${a.msg}</span>
+    </div>`).join('');
+}
+
+function avalDieta() {
+  const prot = parseFloat(document.getElementById('prot_ingestao').value);
+  let html = '';
+  if (prot && prot < 1.2) html = `<div class="alerta alerta-warn"><span>⚠️</span><span>Ingestão proteica insuficiente (${prot} g/kg/dia). Recomendado mínimo 1.2–2.0 g/kg/dia no pré-operatório.</span></div>`;
+  else if (prot && prot >= 1.2) html = `<div class="alerta alerta-info"><span>✅</span><span>Ingestão proteica adequada (${prot} g/kg/dia).</span></div>`;
+  document.getElementById('dieta-alerta').innerHTML = html;
+}
+
+// ============================================================
+// MOTOR DE DECISÃO
+// ============================================================
+function calcDecisao() {
+  const imc = state.imc;
+  const hb = parseFloat(document.getElementById('lab_hb').value)||0;
+  const gli = parseFloat(document.getElementById('lab_gli').value)||0;
+  const alb = parseFloat(document.getElementById('lab_alb').value)||0;
+  const inr = parseFloat(document.getElementById('lab_inr').value)||0;
+  const prot = parseFloat(document.getElementById('prot_ingestao').value)||0;
+  const sexo = document.getElementById('sexo').value;
+
+  let riscoA = 'baixo', riscoB = 'baixo', riscoC = 'baixo', riscoD = 'baixo';
+  let score = 0;
+
+  // A — Antropométrico
+  if (imc < 18.5) { riscoA = 'alto'; score += 3; }
+  else if (imc >= 35) { riscoA = 'alto'; score += 3; }
+  else if (imc >= 30 || imc < 20) { riscoA = 'moderado'; score += 1; }
+
+  // B — Bioquímico
+  const anemiaF = sexo==='Feminino' && hb>0 && hb<12;
+  const anemiaM = sexo!=='Feminino' && hb>0 && hb<13;
+  if (alb > 0 && alb < 3.0) { riscoB = 'alto'; score += 3; }
+  else if ((alb>0&&alb<3.5)||(anemiaF||anemiaM)||(gli>126)||(inr>1.5)) { riscoB = 'moderado'; score += 2; }
+  else if (gli>100) { riscoB = 'moderado'; score += 1; }
+
+  // C — Clínico
+  const triChks = document.querySelectorAll('.chk input[type=checkbox]:checked');
+  const triVals = Array.from(triChks).map(c=>c.value);
+  const fatoresAlto = ['trombose','complic_cirurg','prob_anestesia','autoimune'];
+  const fatoresMod = ['fumante','alcool','anticoagulante','corticoide','queloide','cicatriz_ruim','sarcopenia'];
+  if (fatoresAlto.some(f=>triVals.includes(f))) { riscoC = 'alto'; score += 2; }
+  else if (fatoresMod.some(f=>triVals.includes(f))) { riscoC = 'moderado'; score += 1; }
+
+  // D — Dietético
+  if (prot > 0 && prot < 0.8) { riscoD = 'alto'; score += 2; }
+  else if (prot > 0 && prot < 1.2) { riscoD = 'moderado'; score += 1; }
+
+  // Aptidão
+  let aptidao, aptidaoClass, tempoCirurgia;
+  if (score === 0) { aptidao = 'Apto'; aptidaoClass = 'apto'; tempoCirurgia = 'Cirurgia pode ser agendada em 15–30 dias.'; }
+  else if (score <= 3) { aptidao = 'Apto com Preparo Nutrológico'; aptidaoClass = 'preparo'; tempoCirurgia = 'Preparo nutricional por 4–8 semanas antes da cirurgia.'; }
+  else { aptidao = 'Não Apto no Momento'; aptidaoClass = 'napto'; tempoCirurgia = 'Otimização clínica e nutricional necessária. Reavaliar em 8–12 semanas.'; }
+
+  // Suplementação
+  let supl = [];
+  if (alb < 3.5 || prot < 1.2) supl.push('Suplemento proteico hiperproteico (Whey, caseína ou suplemento enteral) — meta: 1.5–2.0 g/kg/dia');
+  if (hb < 12) supl.push('Sulfato ferroso 300 mg/dia + vitamina C 500 mg (se anemia ferropriva confirmada)');
+  if (triVals.includes('fumante')) supl.push('Vitamina C 1000 mg/dia + vitamina E 400 UI/dia (estresse oxidativo)');
+  if (triVals.includes('queloide') || triVals.includes('cicatriz_ruim')) supl.push('Zinco 30–45 mg/dia + vitamina A 5000 UI/dia (cicatrização)');
+  if (gli > 100) supl.push('Evitar suplementos com açúcar; considerar cromo picolinato 200 mcg/dia');
+  if (supl.length === 0) supl.push('Manutenção da dieta atual; multivitamínico de manutenção');
+
+  // Ajuste nutrológico
+  let ajustes = [];
+  if (prot < 1.2) ajustes.push('Aumentar ingestão proteica para 1.5–2.0 g/kg/dia (carnes magras, ovos, leguminosas, laticínios)');
+  if (imc >= 30) ajustes.push('Dieta hipocalórica supervisionada com preservação proteica; meta perda 5–10% do peso antes da cirurgia');
+  if (imc < 18.5) ajustes.push('Dieta hipercalórica e hiperproteica para recuperação ponderal; meta: IMC ≥ 20 antes da cirurgia');
+  if (triVals.includes('fumante')) ajustes.push('Suspensão do tabagismo obrigatória 4–8 semanas antes (reduz complicações em >40%)');
+  if (triVals.includes('glp1')) ajustes.push('Suspender GLP-1 conforme protocolo: semanal → 7 dias antes; diário → 3 dias antes');
+  if (triVals.includes('anticoagulante') || triVals.includes('supl_sangramento')) ajustes.push('Suspender anticoagulantes e suplementos de risco conforme orientação médica');
+  if (triVals.includes('alcool')) ajustes.push('Suspensão do álcool mínimo 4 semanas antes da cirurgia');
+  if (ajustes.length === 0) ajustes.push('Manutenção dos hábitos alimentares atuais com ênfase em hidratação adequada (30–35 mL/kg/dia)');
+
+  state.decisao = { riscoA, riscoB, riscoC, riscoD, score, aptidao, aptidaoClass, tempoCirurgia, supl, ajustes };
+
+  renderDecisao();
+}
+
+function renderDecisao() {
+  const d = state.decisao;
+  const risco = (r) => ({
+    'baixo': '<span class="badge badge-ok">● Baixo</span>',
+    'moderado': '<span class="badge badge-warn">● Moderado</span>',
+    'alto': '<span class="badge badge-danger">● Alto</span>'
+  })[r];
+
+  // ABCD
+  document.getElementById('abcd-classificacao').innerHTML = `
+    <table>
+      <thead><tr><th>Domínio</th><th>Descrição</th><th>Risco</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A</strong> — Antropométrico</td><td>IMC, composição corporal, variação de peso</td><td>${risco(d.riscoA)}</td></tr>
+        <tr><td><strong>B</strong> — Bioquímico</td><td>Albumina, hemoglobina, glicemia, coagulação</td><td>${risco(d.riscoB)}</td></tr>
+        <tr><td><strong>C</strong> — Clínico</td><td>Comorbidades, medicamentos, histórico cirúrgico</td><td>${risco(d.riscoC)}</td></tr>
+        <tr><td><strong>D</strong> — Dietético</td><td>Ingestão proteica e calórica, suplementação</td><td>${risco(d.riscoD)}</td></tr>
+      </tbody>
+    </table>`;
+
+  // Risk needle
+  const pct = Math.min(95, (d.score / 8) * 100);
+  document.getElementById('risk-needle').style.left = pct + '%';
+  const globalRisco = d.score<=1?'baixo':d.score<=3?'moderado':'alto';
+  document.getElementById('risco-global-display').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      ${risco(globalRisco)}
+      <span style="font-size:13px;color:var(--cinza-med)">Score: <strong>${d.score}</strong>/8 pontos</span>
+    </div>`;
+
+  // Aptidão
+  const aptCls = {'apto':'dec-apto','preparo':'dec-preparo','napto':'dec-napto'}[d.aptidaoClass];
+  const aptIcon = {'apto':'✅','preparo':'⚠️','napto':'🔴'}[d.aptidaoClass];
+  document.getElementById('decisao-aptidao').innerHTML = `
+    <div class="dec-card ${aptCls}" style="grid-column:1/-1">
+      <div class="dec-title" style="font-size:16px">${aptIcon} ${d.aptidao}</div>
+      <div class="dec-items">${d.tempoCirurgia}</div>
+    </div>`;
+
+  // Suplementação
+  document.getElementById('supl-recomendada').innerHTML = d.supl.map(s=>`
+    <div class="rel-item">💊 ${s}</div>`).join('');
+
+  // Ajuste nutrológico
+  document.getElementById('ajuste-nutro').innerHTML = d.ajustes.map(a=>`
+    <div class="rel-item">${a}</div>`).join('');
+
+  // Tempo
+  document.getElementById('tempo-cirurgia').innerHTML = `
+    <div class="alerta ${d.aptidaoClass==='apto'?'alerta-info':d.aptidaoClass==='preparo'?'alerta-warn':'alerta-danger'}">
+      <span>🗓️</span><span>${d.tempoCirurgia}</span>
+    </div>`;
+}
+
+// ============================================================
+// RELATÓRIO FINAL
+// ============================================================
+function gerarRelatorio() {
+  const nome = document.getElementById('nome').value || 'Paciente';
+  const peso = document.getElementById('peso').value || '--';
+  const altura = document.getElementById('altura').value || '--';
+  const imc = state.imc ? state.imc.toFixed(1) : '--';
+  const d = state.decisao;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  const aptCor = {'apto':'#3B6D11','preparo':'#BA7517','napto':'#A32D2D'}[d.aptidaoClass||'apto'];
+  const aptBg = {'apto':'#EAF3DE','preparo':'#FAEEDA','napto':'#FCEBEB'}[d.aptidaoClass||'apto'];
+
+  document.getElementById('relatorio-container').innerHTML = `
+    <div class="rel-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Avaliação Pré-Operatória Nutricional</div>
+          <div style="font-size:20px;font-weight:700">${nome}</div>
+          <div style="font-size:13px;opacity:.75;margin-top:4px">Procedimento: ${state.proc||'--'} &nbsp;|&nbsp; Data: ${hoje}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;opacity:.7">Score de Risco</div>
+          <div style="font-size:32px;font-weight:700">${d.score||0}<span style="font-size:14px;font-weight:400">/8</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="rel-body">
+
+      <div class="rel-section">
+        <div class="rel-section-title">📊 Dados Antropométricos</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:.6rem">
+          <div class="metric"><div class="metric-label">Peso</div><div class="metric-val">${peso}<span class="metric-unit"> kg</span></div></div>
+          <div class="metric"><div class="metric-label">Altura</div><div class="metric-val">${altura}<span class="metric-unit"> cm</span></div></div>
+          <div class="metric"><div class="metric-label">IMC</div><div class="metric-val">${imc}<span class="metric-unit"> kg/m²</span></div></div>
+          <div class="metric"><div class="metric-label">% Gordura</div><div class="metric-val">${document.getElementById('gordura').value||'--'}<span class="metric-unit"> %</span></div></div>
+        </div>
+      </div>
+
+      <div class="rel-section">
+        <div class="rel-section-title">🩺 Classificação ABCD</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+          ${['A','B','C','D'].map((l,i)=>{
+            const nomes = ['Antropométrico','Bioquímico','Clínico','Dietético'];
+            const r = [d.riscoA,d.riscoB,d.riscoC,d.riscoD][i]||'baixo';
+            const cor = {baixo:'#27500A',moderado:'#633806',alto:'#791F1F'}[r];
+            const bg = {baixo:'#EAF3DE',moderado:'#FAEEDA',alto:'#FCEBEB'}[r];
+            return `<div style="background:${bg};border-radius:8px;padding:.7rem 1rem">
+              <div style="font-size:11px;font-weight:700;color:${cor};text-transform:uppercase">${l} — ${nomes[i]}</div>
+              <div style="font-size:13px;font-weight:600;color:${cor};margin-top:2px">Risco ${r.charAt(0).toUpperCase()+r.slice(1)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      ${getComentariosTriagemPorTopico().length ? `<div class="rel-section"><div class="rel-section-title">📝 Comentários adicionais da triagem</div>${getComentariosTriagemPorTopico().map(c=>`<div class="rel-item"><strong>${c.titulo}:</strong> ${escapeHtml(c.texto).replace(/\n/g,'<br>')}</div>`).join('')}</div>` : ''}
+
+      <div class="rel-section">
+        <div class="rel-section-title">⚖️ Decisão Clínica</div>
+        <div style="background:${aptBg};border-radius:8px;padding:1rem 1.2rem;margin-bottom:.8rem">
+          <div style="font-size:15px;font-weight:700;color:${aptCor}">${{'apto':'✅ APTO','preparo':'⚠️ APTO COM PREPARO','napto':'🔴 NÃO APTO'}[d.aptidaoClass||'apto']}</div>
+          <div style="font-size:13px;color:${aptCor};margin-top:4px">${d.tempoCirurgia||''}</div>
+        </div>
+      </div>
+
+      <div class="rel-section">
+        <div class="rel-section-title">💊 Suplementação Recomendada</div>
+        ${(d.supl||[]).map(s=>`<div class="rel-item">${s}</div>`).join('')}
+      </div>
+
+      <div class="rel-section">
+        <div class="rel-section-title">🥗 Protocolo Nutrológico e Preparo</div>
+        ${(d.ajustes||[]).map(a=>`<div class="rel-item">${a}</div>`).join('')}
+      </div>
+
+      <div class="rel-section">
+        <div class="rel-section-title">🧪 Exames Solicitados</div>
+        ${state.exames.map(e=>`<div class="rel-item">${e}</div>`).join('')}
+        ${state.examesExtras.length>0 ? '<div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;margin:.6rem 0 .3rem">Exames Adicionais por Fatores de Risco</div>'+state.examesExtras.map(e=>`<div class="rel-item">${e}</div>`).join('') : ''}
+      </div>
+
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--cinza-bg);font-size:11px;color:var(--cinza-med);text-align:center">
+        Relatório gerado em ${hoje} pelo Sistema de Avaliação Pré-Operatória Nutricional com Motor de Decisão Clínica.<br>
+        Este documento é um auxílio clínico e não substitui o julgamento médico individualizado.
+      </div>
+    </div>`;
+}
+
+
+
+function getComentariosTriagemPorTopico() {
+  const topicos = [
+    ['Comorbidades', 'comentarios_comorbidades'],
+    ['Tabagismo e etilismo', 'comentarios_tabagismo'],
+    ['Medicamentos', 'comentarios_medicamentos'],
+    ['GLP-1 / emagrecimento', 'comentarios_glp1'],
+    ['Histórico cirúrgico', 'comentarios_historico_cirurgico'],
+    ['Cicatrização', 'comentarios_cicatrizacao'],
+    ['Risco tromboembólico', 'comentarios_tromboembolico'],
+    ['Suplementos', 'comentarios_suplementos']
+  ];
+  return topicos
+    .map(([titulo, id]) => ({ titulo, texto: document.getElementById(id)?.value?.trim() || '' }))
+    .filter(item => item.texto);
+}
+
+// ============================================================
+// IMPRESSÃO / PDF DE EXAMES E ENCERRAMENTO 1ª CONSULTA
+// ============================================================
+function montarDocumentoExames() {
+  const nome = document.getElementById('nome').value || 'Paciente';
+  const dataConsulta = document.getElementById('dconsulta').value ? document.getElementById('dconsulta').value.split('-').reverse().join('/') : new Date().toLocaleDateString('pt-BR');
+  const retorno = document.getElementById('data_retorno').value ? document.getElementById('data_retorno').value.split('-').reverse().join('/') : 'Não informado';
+  const obs = document.getElementById('obs_retorno').value || 'Sem observações adicionais.';
+  const exames = (state.exames || []).map(e => `<li>${escapeHtml(e)}</li>`).join('');
+  const extras = (state.examesExtras || []).map(e => `<li>${escapeHtml(e)}</li>`).join('');
+  const comentariosTopicos = getComentariosTriagemPorTopico();
+  document.getElementById('exames-print-doc').innerHTML = `
+    <div class="print-title">Solicitação de Exames Pré-Operatórios</div>
+    <div class="print-sub">Gerado pelo Sistema de Avaliação Pré-Operatória Nutricional</div>
+    <div class="print-box">
+      <div class="print-box-title">Identificação</div>
+      <div><strong>Paciente:</strong> ${escapeHtml(nome)}</div>
+      <div><strong>Procedimento:</strong> ${escapeHtml(state.proc || '--')}</div>
+      <div><strong>Data da consulta:</strong> ${escapeHtml(dataConsulta)}</div>
+    </div>
+    <div class="print-box">
+      <div class="print-box-title">Exames solicitados</div>
+      <ol class="print-list">${exames || '<li>Nenhum exame gerado.</li>'}</ol>
+    </div>
+    ${extras ? `<div class="print-box"><div class="print-box-title">Exames adicionais por fatores de risco</div><ol class="print-list">${extras}</ol></div>` : ''}
+    <div class="print-box">
+      <div class="print-box-title">Retorno para 2ª consulta</div>
+      <div><strong>Data prevista:</strong> ${escapeHtml(retorno)}</div>
+      <div><strong>Observações:</strong> ${escapeHtml(obs)}</div>
+    </div>
+    ${comentariosTopicos.length ? `<div class="print-box"><div class="print-box-title">Comentários da triagem</div>${comentariosTopicos.map(c => `<div style="margin-bottom:8px"><strong>${escapeHtml(c.titulo)}:</strong><br>${escapeHtml(c.texto).replace(/\n/g,'<br>')}</div>`).join('')}</div>` : ''}
+    <div style="font-size:11px;color:#666;margin-top:20px;text-align:center">Documento auxiliar para apresentação acadêmica. Validar conduta com o médico responsável.</div>`;
+}
+
+function imprimirExames() {
+  if (!state.exames || !state.exames.length) gerarExames();
+  montarDocumentoExames();
+  saveCurrentPatient();
+  document.body.classList.add('print-exames');
+  window.print();
+  setTimeout(() => document.body.classList.remove('print-exames'), 500);
+}
+
+function salvarEEncerrarPrimeiraConsulta() {
+  if (!state.exames || !state.exames.length) gerarExames();
+  saveCurrentPatient();
+  alert('1ª consulta salva. Quando a paciente retornar, clique nos três pontinhos no canto superior esquerdo e selecione o nome dela para continuar a 2ª consulta.');
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function novoAtendimento() {
+  if (!confirm('Iniciar novo atendimento? Os dados atuais serão perdidos.')) return;
+  location.reload();
+}
+
+// Init date
+document.getElementById('dconsulta').value = new Date().toISOString().split('T')[0];
+setupAutosave();
+</script>
+</body>
+</html>
